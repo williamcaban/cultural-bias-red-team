@@ -19,7 +19,7 @@ from pathlib import Path
 from specs.models import BiasComparisonSpec  # noqa: F401 — re-export
 
 _SPECS_DIR = Path(__file__).parent
-_EXCLUDED = {"__init__", "models", "singapore"}
+_EXCLUDED = {"__init__", "models", "singapore", "sdg_hub_harm"}
 
 
 def _slug_to_filename(slug: str) -> str:

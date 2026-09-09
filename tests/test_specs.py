@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from specs import list_specs, load_spec
 from specs.models import BiasComparisonSpec, BiasGroup
+from specs.sdg_hub_harm import SDG_HUB_HARM_DATASET, SDG_HUB_HARM_DEFINITIONS
 from specs.singapore import CULTURAL_BIAS_DATASET, CATEGORY_DEFINITIONS
 
 
@@ -29,6 +30,32 @@ def test_singapore_dataset_shape() -> None:
     ]
     for col in required_cols:
         assert col in CULTURAL_BIAS_DATASET.columns, f"Missing column: {col}"
+
+
+def test_sdg_hub_harm_dataset_shape() -> None:
+    assert len(SDG_HUB_HARM_DATASET) == 8, "SDG Hub harm dataset must have 8 categories"
+    required_cols = [
+        "policy_concept", "concept_definition", "demographics_pool",
+        "expertise_pool", "geography_pool", "language_styles_pool",
+        "exploit_stages_pool", "task_medium_pool", "temporal_pool", "trust_signals_pool",
+    ]
+    for col in required_cols:
+        assert col in SDG_HUB_HARM_DATASET.columns, f"Missing column: {col}"
+
+
+def test_no_duplicate_policy_concepts() -> None:
+    import pandas as pd
+    combined = pd.concat([CULTURAL_BIAS_DATASET, SDG_HUB_HARM_DATASET], ignore_index=True)
+    assert combined["policy_concept"].nunique() == 13, (
+        "Combined dataset should have 13 unique policy concepts (5 Singapore + 8 harm)"
+    )
+
+
+def test_sdg_hub_expertise_pool_populated() -> None:
+    for _, row in SDG_HUB_HARM_DATASET.iterrows():
+        assert len(row["expertise_pool"]) >= 1, (
+            f"{row['policy_concept']}: expertise_pool must not be empty"
+        )
 
 
 def test_singapore_definitions_coverage() -> None:
@@ -82,6 +109,9 @@ if __name__ == "__main__":
     tests = [
         test_models_importable,
         test_singapore_dataset_shape,
+        test_sdg_hub_harm_dataset_shape,
+        test_no_duplicate_policy_concepts,
+        test_sdg_hub_expertise_pool_populated,
         test_singapore_definitions_coverage,
         test_list_specs_finds_bundled,
         test_all_specs_load_and_validate,
