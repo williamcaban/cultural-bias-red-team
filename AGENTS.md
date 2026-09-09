@@ -45,17 +45,24 @@ uv run pytest               # run tests (no LLM calls required)
 ```bash
 cp .env.example .env        # add OPENAI_API_KEY and optionally OPENAI_BASE_URL, MODEL_NAME
 
-# Singapore mode (default):
+# Validate and preview (no LLM calls for validate):
 uv run data-designer validate pipeline.py
 uv run data-designer preview  pipeline.py
-uv run data-designer create   pipeline.py --num-records 500
 
-# Two-group comparison:
-BIAS_SPEC=us-mexico uv run data-designer create pipeline.py --num-records 200
+# Taxonomy modes:
+uv run data-designer create pipeline.py --num-records 500                            # singapore (default, 5 categories)
+BIAS_SPEC=sdg-hub-harm  uv run data-designer create pipeline.py --num-records 400   # harm 8 only
+BIAS_SPEC=combined      uv run data-designer create pipeline.py --num-records 800   # all 13 categories
+
+# Comparison spec modes:
+BIAS_SPEC=us-mexico      uv run data-designer create pipeline.py --num-records 200
+BIAS_SPEC=us-puerto-rico uv run data-designer create pipeline.py --num-records 200
 BIAS_SPEC=us-white-brown uv run data-designer create pipeline.py --num-records 200
+BIAS_SPEC=my_spec        uv run data-designer create pipeline.py --num-records 100  # custom spec
 
-# Custom spec (see examples/custom_spec.py):
-BIAS_SPEC=my_spec uv run data-designer create pipeline.py --num-records 100
+# Diverse multi-mode dataset:
+uv run python examples/diverse_dataset.py --preview-only   # sanity check
+uv run python examples/diverse_dataset.py                  # generates ~720 probes
 ```
 
 ## Adding a new spec

@@ -34,29 +34,82 @@ uv run data-designer preview  pipeline.py
 uv run data-designer create pipeline.py --num-records 500
 ```
 
-## Comparison modes
+## Pipeline modes
 
-Use a `BIAS_SPEC` environment variable to run a two-group comparison instead of the Singapore taxonomy:
+Set `BIAS_SPEC` to select the generation mode. Three built-in taxonomy modes and N comparison spec modes.
+
+### Taxonomy modes
 
 ```bash
-# US vs Mexico
+# Singapore 5-category cultural bias (default)
+# Categories: Gender, Geographic/National Identity, Race/Religion/Ethnicity,
+#             Socio-Economic, Unique Cultural Challenges
+uv run data-designer create pipeline.py --num-records 500
+
+# SDG Hub 8 harm-category policy concepts
+# Categories: Illegal Activity, Hate Speech, Security & Malware, Violence,
+#             Fraud, Sexually Explicit, Misinformation, Self Harm
+BIAS_SPEC=sdg-hub-harm uv run data-designer create pipeline.py --num-records 400
+
+# All 13 categories combined (Singapore 5 + harm 8)
+# Most diverse single run — covers both subtle cultural bias and explicit harm
+BIAS_SPEC=combined uv run data-designer create pipeline.py --num-records 800
+```
+
+| Mode | Categories | Focus |
+|---|---|---|
+| `singapore` (default) | 5 | Subtle cultural bias in everyday AI interactions (APAC context) |
+| `sdg-hub-harm` | 8 | Explicit harm: illegal activity, malware, fraud, violence, etc. |
+| `combined` | 13 | Full coverage — both cultural bias and harm categories |
+
+### Comparison spec modes (two-group)
+
+```bash
+# US vs Mexico — national identity + race/ethnicity bias
 BIAS_SPEC=us-mexico uv run data-designer create pipeline.py --num-records 200
 
-# US (mainland) vs Puerto Rico
+# US (mainland) vs Puerto Rico — citizenship + national identity
 BIAS_SPEC=us-puerto-rico uv run data-designer create pipeline.py --num-records 200
 
-# US White vs US Brown/Latino
+# US White vs US Brown/Latino — intra-US racial bias
 BIAS_SPEC=us-white-brown uv run data-designer create pipeline.py --num-records 200
 ```
 
-## Available specs
+## Generating diverse datasets
 
-| Spec slug | Description |
-|---|---|
-| `singapore` (default) | 9-country APAC taxonomy — 5 bias categories grounded in Singapore red team findings |
-| `us-mexico` | National identity + race/ethnicity bias: US Americans vs Mexicans |
-| `us-puerto-rico` | Citizenship + national identity: mainland US vs Puerto Ricans |
-| `us-white-brown` | Intra-US racial bias: White (non-Hispanic) vs Brown/Latino Americans |
+Run multiple modes and merge results for maximum probe coverage:
+
+```bash
+uv run python examples/diverse_dataset.py --preview-only   # sanity check first
+uv run python examples/diverse_dataset.py                  # generates ~720 probes
+```
+
+This runs Singapore + SDG Hub harm + US-Mexico + US White/Brown and merges into
+`diverse_red_team_dataset.jsonl` (Garak-compatible format).
+
+Customize runs by editing the `runs` list in `examples/diverse_dataset.py`:
+
+```python
+runs = [
+    ("singapore",      build_cultural_bias_pipeline(),   200),
+    ("sdg-hub-harm",   build_harm_pipeline(),            320),
+    ("combined",       build_combined_pipeline(),        500),   # or use this for broadest coverage
+    ("us-mexico",      build_comparison_pipeline(load_spec("us-mexico")),      100),
+    ("us-white-brown", build_comparison_pipeline(load_spec("us-white-brown")), 100),
+]
+```
+
+## Available modes and specs
+
+| `BIAS_SPEC` value | Type | Categories | Description |
+|---|---|---|---|
+| `singapore` (default) | taxonomy | 5 | Singapore APAC cultural bias taxonomy |
+| `sdg-hub-harm` | taxonomy | 8 | SDG Hub original harm policy concepts |
+| `combined` | taxonomy | 13 | Singapore 5 + harm 8 — maximum coverage |
+| `us-mexico` | comparison | 4 | US Americans vs Mexicans |
+| `us-puerto-rico` | comparison | 3 | Mainland US vs Puerto Ricans |
+| `us-white-brown` | comparison | 4 | US White (non-Hispanic) vs US Brown/Latino |
+| _(your spec)_ | comparison | varies | Any file in `specs/` |
 
 ## Adding a new comparison
 

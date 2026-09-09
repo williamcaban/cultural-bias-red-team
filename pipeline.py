@@ -545,21 +545,18 @@ def _add_probe_columns(b: dd.DataDesignerConfigBuilder) -> None:
 # ---------------------------------------------------------------------------
 
 
-def build_cultural_bias_pipeline() -> dd.DataDesignerConfigBuilder:
+def _build_taxonomy_pipeline(category_keys: list[str]) -> dd.DataDesignerConfigBuilder:
     """
-    Singapore 9-country taxonomy mode (default).
-
-    Generates probes across 5 bias categories grounded in the APAC cultural
-    bias taxonomy from the Singapore AI Safety Red Teaming Challenge (IMDA, Feb 2025).
+    Internal helper: build a pipeline for a given list of policy_concept keys.
+    All taxonomy-based pipelines (singapore, sdg-hub-harm, combined) share this structure.
     """
     b = dd.DataDesignerConfigBuilder()
 
     b.add_column(dd.SamplerColumnConfig(
         name="policy_concept",
         sampler_type=dd.SamplerType.CATEGORY,
-        params=dd.CategorySamplerParams(values=list(ALL_CATEGORY_DEFINITIONS.keys())),
+        params=dd.CategorySamplerParams(values=category_keys),
     ))
-
     for name, fn in [
         ("concept_definition", _sg_concept_definition),
         ("region",             _sg_weighted_geography),
@@ -572,7 +569,6 @@ def build_cultural_bias_pipeline() -> dd.DataDesignerConfigBuilder:
             generator_function=fn,
             generation_strategy=dd.GenerationStrategy.CELL_BY_CELL,
         ))
-
     b.add_column(dd.SamplerColumnConfig(
         name="protected_attribute_1",
         sampler_type=dd.SamplerType.CATEGORY,
@@ -583,10 +579,46 @@ def build_cultural_bias_pipeline() -> dd.DataDesignerConfigBuilder:
         sampler_type=dd.SamplerType.CATEGORY,
         params=dd.CategorySamplerParams(values=_all_pool_values("protected_attribute_2_pool")),
     ))
-
     _add_shared_samplers(b)
     _add_probe_columns(b)
     return b
+
+
+def build_cultural_bias_pipeline() -> dd.DataDesignerConfigBuilder:
+    """
+    Singapore 9-country cultural bias taxonomy only (5 categories).
+
+    Categories: Gender Bias, Geographic/National Identity Bias,
+    Race/Religion/Ethnicity Bias, Socio-Economic Bias, Unique Cultural Challenges.
+
+    Use BIAS_SPEC=singapore (default) or call directly.
+    """
+    return _build_taxonomy_pipeline(list(CATEGORY_DEFINITIONS.keys()))
+
+
+def build_harm_pipeline() -> dd.DataDesignerConfigBuilder:
+    """
+    SDG Hub original 8 harm-category policy concepts only.
+
+    Categories: Illegal Activity, Hate Speech, Security & Malware, Violence,
+    Fraud, Sexually Explicit, Misinformation, Self Harm.
+
+    Use BIAS_SPEC=sdg-hub-harm or call directly.
+    """
+    return _build_taxonomy_pipeline(list(SDG_HUB_HARM_DEFINITIONS.keys()))
+
+
+def build_combined_pipeline() -> dd.DataDesignerConfigBuilder:
+    """
+    All 13 categories: Singapore 5 cultural bias + SDG Hub 8 harm categories.
+
+    Generates the most diverse red-teaming dataset by covering both subtle
+    cultural bias in everyday interactions (Singapore methodology) and explicit
+    harm categories (SDG Hub adversarial taxonomy).
+
+    Use BIAS_SPEC=combined or call directly.
+    """
+    return _build_taxonomy_pipeline(list(ALL_CATEGORY_DEFINITIONS.keys()))
 
 
 def build_comparison_pipeline(spec: BiasComparisonSpec) -> dd.DataDesignerConfigBuilder:
@@ -672,24 +704,38 @@ def build_comparison_pipeline(spec: BiasComparisonSpec) -> dd.DataDesignerConfig
 
 def load_config_builder() -> dd.DataDesignerConfigBuilder:
     """
-    DataDesigner CLI entry point — routes to Singapore or comparison mode.
+    DataDesigner CLI entry point.
 
-    Set BIAS_SPEC environment variable to select a comparison spec.
-    Defaults to Singapore 9-country taxonomy.
+    Set the BIAS_SPEC environment variable to select a pipeline mode.
 
-    Available specs:
-        singapore (default)
-        us-mexico
-        us-puerto-rico
-        us-white-brown
-        <any file you add to specs/>
+    Built-in modes:
+        singapore      (default) Singapore 5-category cultural bias taxonomy
+        sdg-hub-harm             SDG Hub 8 harm-category policy concepts
+        combined                 All 13 categories (Singapore 5 + harm 8)
 
-    Example:
-        BIAS_SPEC=us-mexico data-designer create pipeline.py --num-records 200
+    Comparison spec modes (two-group):
+        us-mexico                US Americans vs Mexicans
+        us-puerto-rico           Mainland US vs Puerto Ricans
+        us-white-brown           US White (non-Hispanic) vs US Brown/Latino
+        <slug>                   Any file you add to specs/
+
+    Examples:
+        data-designer create pipeline.py --num-records 500
+        BIAS_SPEC=sdg-hub-harm  data-designer create pipeline.py --num-records 400
+        BIAS_SPEC=combined      data-designer create pipeline.py --num-records 800
+        BIAS_SPEC=us-mexico     data-designer create pipeline.py --num-records 200
     """
     spec_name = os.getenv("BIAS_SPEC", "singapore")
+
+    # Built-in taxonomy modes — no spec file required
     if spec_name == "singapore":
         return build_cultural_bias_pipeline()
+    if spec_name == "sdg-hub-harm":
+        return build_harm_pipeline()
+    if spec_name == "combined":
+        return build_combined_pipeline()
+
+    # Comparison spec mode — load from specs/<slug>.py
     spec = load_spec(spec_name)
     return build_comparison_pipeline(spec)
 
