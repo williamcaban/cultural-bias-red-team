@@ -1,0 +1,40 @@
+name: Validate
+
+on:
+  pull_request:
+    paths:
+      - "pipeline.py"
+      - "specs/**"
+
+jobs:
+  validate-specs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pydantic numpy pandas
+
+      - name: Validate all specs load correctly
+        run: python tests/test_specs.py
+
+  validate-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install data-designer
+        run: pip install data-designer pydantic numpy pandas python-dotenv
+
+      - name: Validate pipeline schema
+        run: data-designer validate pipeline.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
