@@ -30,6 +30,8 @@ red-teaming = [
     "judge-kappa>=0.1.0",
 ]
 
+[project.scripts]
+validate-pipeline-precommit = "scripts.validate-pipeline-precommit:main"
 
 [project.urls]
 Repository = "https://github.com/williamcaban/cultural-bias-red-team"
@@ -52,6 +54,7 @@ known-first-party = ["specs"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+addopts = "-v"
 
 [tool.uv]
 dev-dependencies = [

@@ -613,6 +613,44 @@ def _build_taxonomy_pipeline(category_keys: list[str]) -> dd.DataDesignerConfigB
         )
     )
     _add_shared_samplers(b)
+    
+    # Add comparison columns with empty values for taxonomy mode (templates reference them conditionally)
+    b.add_column(
+        dd.SamplerColumnConfig(
+            name="group_1_name",
+            sampler_type=dd.SamplerType.CATEGORY,
+            params=dd.CategorySamplerParams(values=[""]),
+        )
+    )
+    b.add_column(
+        dd.SamplerColumnConfig(
+            name="group_2_name",
+            sampler_type=dd.SamplerType.CATEGORY,
+            params=dd.CategorySamplerParams(values=[""]),
+        )
+    )
+    b.add_column(
+        dd.SamplerColumnConfig(
+            name="group_1_ref",
+            sampler_type=dd.SamplerType.CATEGORY,
+            params=dd.CategorySamplerParams(values=[""]),
+        )
+    )
+    b.add_column(
+        dd.SamplerColumnConfig(
+            name="group_2_ref",
+            sampler_type=dd.SamplerType.CATEGORY,
+            params=dd.CategorySamplerParams(values=[""]),
+        )
+    )
+    b.add_column(
+        dd.SamplerColumnConfig(
+            name="comparison_topic",
+            sampler_type=dd.SamplerType.CATEGORY,
+            params=dd.CategorySamplerParams(values=[""]),
+        )
+    )
+    
     _add_probe_columns(b)
     return b
 
