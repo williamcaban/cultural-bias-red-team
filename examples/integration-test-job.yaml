@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: integration-test
-  namespace: hermes-sandbox
+  namespace: <your-namespace>
   labels:
     app.kubernetes.io/managed-by: hermes
     hermes.task: integration-test
@@ -80,7 +80,7 @@ spec:
       volumes:
       - name: api-key
         secret:
-          secretName: qwen3-27b-apikey
+          secretName: <your-secret-name>
           items:
           - key: API_KEY
             path: api-key
