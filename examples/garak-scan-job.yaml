@@ -27,7 +27,7 @@ spec:
           pip install --quiet garak
           
           # Set environment variables
-          export TARGET_URL="https://qwen3-27b-nvfp4-kserve-workload-svc.models-as-a-service.svc.cluster.local:8000/v1"
+          export TARGET_URL="https://<model-service>.models-as-a-service.svc.cluster.local:8000/v1"
           export TARGET_API_KEY=$(cat /secrets/api-key)
           export OPENAI_API_KEY="$TARGET_API_KEY"
           export OPENAI_API_BASE="$TARGET_URL"
@@ -35,13 +35,13 @@ spec:
           export REQUESTS_CA_BUNDLE=""
           export PYTHONHTTPSVERIFY=0
           
-          echo "Running garak scan on qwen3-27b-nvfp4..."
+          echo "Running garak scan on <your-model>..."
           echo "This will take several minutes and consume significant resources."
           
           # Run a limited garak scan (just one probe to test)
           python -m garak \
             --model_type openai \
-            --model_name qwen3-27b-nvfp4 \
+            --model_name <your-model> \
             --probes encoding \
             --reportdir /tmp/garak-results \
             --interactive false
@@ -70,7 +70,7 @@ spec:
       volumes:
       - name: api-key
         secret:
-          secretName: qwen3-27b-apikey
+          secretName: <your-secret-name>
           items:
           - key: API_KEY
             path: api-key

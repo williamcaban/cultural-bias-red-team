@@ -2,11 +2,11 @@
 
 ## Overview
 
-The `examples/integration_test.py` script tests the attack runners against a live LLM endpoint. However, **integration tests require special setup** due to wbos cluster networking constraints.
+The `examples/integration_test.py` script tests the attack runners against a live LLM endpoint. However, **integration tests require special setup** due to cluster networking constraints.
 
 ## Endpoint Options
 
-### Option 1: Cluster-Internal Endpoint (Recommended for wbos)
+### Option 1: Cluster-Internal Endpoint (Recommended for on-cluster testing)
 
 The model is served at:
 ```
@@ -14,15 +14,15 @@ https://<model-service>.models-as-a-service.svc.cluster.local:8000/v1
 ```
 
 **Requirements:**
-- Must run from **inside** the wbos cluster (as a pod or job)
-- Uses API key from a secret in `hermes-sandbox` namespace
+- Must run from **inside** the cluster (as a pod or job)
+- Uses API key from a secret in your namespace
 - Self-signed TLS certificate (handled by httpx with `verify=False`)
 
-**To run from a wbos pod:**
+**To run from a cluster pod:**
 ```bash
-# From a pod in hermes-sandbox or project1 namespace
+# From a pod in your namespace
 export TARGET_URL="https://<model-service>.models-as-a-service.svc.cluster.local:8000/v1"
-export TARGET_API_KEY=$(oc -n hermes-sandbox get secret <model-key-secret> -o jsonpath='{.data.API_KEY}' | base64 -d)
+export TARGET_API_KEY=$(oc -n <your-namespace> get secret <your-secret> -o jsonpath='{.data.API_KEY}' | base64 -d)
 
 cd /path/to/cultural-bias-red-team
 uv run examples/integration_test.py
