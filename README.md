@@ -1,5 +1,9 @@
 # cultural-bias-red-team
 
+> **This project has moved to [interplay-adversarial/interplay](https://github.com/interplay-adversarial/interplay).**
+> New development, issues and pull requests happen there. This repository is kept
+> public for existing references and is no longer maintained.
+
 Synthetic red-team probe generation for evaluating cultural bias in LLMs, expanded to full-spectrum adversarial red teaming.
 
 Implements the **Singapore AI Safety Red Teaming Challenge methodology** (IMDA + Humane Intelligence, Feb 2025) using [NeMo Data Designer](https://github.com/NVIDIA-NeMo/DataDesigner), plus 7 attack methodologies for comprehensive adversarial testing.
