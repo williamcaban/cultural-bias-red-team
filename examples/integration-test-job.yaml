@@ -1,0 +1,93 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: integration-test
+  namespace: hermes-sandbox
+  labels:
+    app.kubernetes.io/managed-by: hermes
+    hermes.task: integration-test
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/managed-by: hermes
+        hermes.task: integration-test
+    spec:
+      serviceAccountName: hermes
+      containers:
+      - name: integration-test
+        image: registry.access.redhat.com/ubi9/python-312:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          
+          # Install only lightweight dependencies (no garak, no torch)
+          pip install --quiet httpx requests python-dotenv any-llm-sdk judge-kappa
+          
+          # Extract code from configmap to working directory
+          mkdir -p /tmp/code
+          tar -xzf /code-config/test-code.tar.gz -C /tmp/code
+          
+          # Set environment variables
+          export TARGET_URL="https://<model-service>.models-as-a-service.svc.cluster.local:8000/v1"
+          export TARGET_API_KEY=$(cat /secrets/api-key)
+          export OPENAI_API_KEY="$TARGET_API_KEY"
+          export OPENAI_API_BASE="$TARGET_URL"
+          export ATTACKER_MODEL="<your-model>"
+          export JUDGE_MODEL="<your-model>"
+          export SSL_CERT_DIR=""
+          export REQUESTS_CA_BUNDLE=""
+          export PYTHONHTTPSVERIFY=0
+          export ANYLLM_VERIFY_SSL=false
+          
+          echo "TARGET_URL: $TARGET_URL"
+          echo "TARGET_API_KEY present: $(test -n "$TARGET_API_KEY" && echo yes || echo no)"
+          echo "ATTACKER_MODEL: $ATTACKER_MODEL"
+          echo "JUDGE_MODEL: $JUDGE_MODEL"
+          
+          # Run simplified integration test (no garak)
+          echo ""
+          echo "=== Running simplified integration test ==="
+          python /tmp/code/examples/minimal_test.py
+          
+          echo ""
+          echo "=== All tests completed ==="
+        env:
+        - name: TARGET_URL
+          value: "https://<model-service>.models-as-a-service.svc.cluster.local:8000/v1"
+        - name: ATTACKER_MODEL
+          value: "<your-model>"
+        - name: JUDGE_MODEL
+          value: "<your-model>"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: api-key
+          mountPath: /secrets
+          readOnly: true
+        - name: code-config
+          mountPath: /code-config
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: api-key
+        secret:
+          secretName: qwen3-27b-apikey
+          items:
+          - key: API_KEY
+            path: api-key
+      - name: code-config
+        configMap:
+          name: integration-test-code
+      - name: tmp
+        emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 2

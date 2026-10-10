@@ -1,0 +1,82 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: garak-scan
+  namespace: hermes-sandbox
+  labels:
+    app.kubernetes.io/managed-by: hermes
+    hermes.task: garak-scan
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/managed-by: hermes
+        hermes.task: garak-scan
+    spec:
+      serviceAccountName: hermes
+      containers:
+      - name: garak-scan
+        image: registry.access.redhat.com/ubi9/python-312:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          
+          # Install garak and heavy dependencies
+          pip install --quiet garak
+          
+          # Set environment variables
+          export TARGET_URL="https://qwen3-27b-nvfp4-kserve-workload-svc.models-as-a-service.svc.cluster.local:8000/v1"
+          export TARGET_API_KEY=$(cat /secrets/api-key)
+          export OPENAI_API_KEY="$TARGET_API_KEY"
+          export OPENAI_API_BASE="$TARGET_URL"
+          export SSL_CERT_DIR=""
+          export REQUESTS_CA_BUNDLE=""
+          export PYTHONHTTPSVERIFY=0
+          
+          echo "Running garak scan on qwen3-27b-nvfp4..."
+          echo "This will take several minutes and consume significant resources."
+          
+          # Run a limited garak scan (just one probe to test)
+          python -m garak \
+            --model_type openai \
+            --model_name qwen3-27b-nvfp4 \
+            --probes encoding \
+            --reportdir /tmp/garak-results \
+            --interactive false
+          
+          echo ""
+          echo "=== Garak scan results ==="
+          ls -la /tmp/garak-results/
+        env:
+        - name: TARGET_URL
+          value: "https://qwen3-27b-nvfp4-kserve-workload-svc.models-as-a-service.svc.cluster.local:8000/v1"
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "500m"
+          limits:
+            memory: "8Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: api-key
+          mountPath: /secrets
+          readOnly: true
+        - name: results
+          mountPath: /tmp/garak-results
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: api-key
+        secret:
+          secretName: qwen3-27b-apikey
+          items:
+          - key: API_KEY
+            path: api-key
+      - name: results
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 1
