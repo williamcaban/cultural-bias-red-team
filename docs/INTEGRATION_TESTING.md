@@ -69,8 +69,8 @@ oc logs -f job/integration-test
 |----------|---------|-------------|
 | `TARGET_URL` | cluster-internal | Target model endpoint |
 | `TARGET_API_KEY` | auto-retrieved | API key for target |
-| `ATTACKER_MODEL` | `qwen3-27b-nvfp4` | Model for attacker |
-| `JUDGE_MODEL` | `qwen3-27b-nvfp4` | Model for judge/scoring |
+|| `ATTACKER_MODEL` | `<your-model>` | Model for attacker |
+| `JUDGE_MODEL` | `<your-model>` | Model for judge/scoring |
 
 ## Test Output
 
@@ -81,8 +81,8 @@ CULTURAL-BIAS-RED-TEAM INTEGRATION TEST
 ============================================================
 
 Target URL: https://...
-Attacker model: qwen3-27b-nvfp4
-Judge model: qwen3-27b-nvfp4
+Attacker model: <your-model>
+Judge model: <your-model>
 
 ============================================================
 TEST: TAP Attack

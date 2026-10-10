@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: garak-scan
-  namespace: hermes-sandbox
+  namespace: <your-namespace>
   labels:
     app.kubernetes.io/managed-by: hermes
     hermes.task: garak-scan
@@ -51,7 +51,7 @@ spec:
           ls -la /tmp/garak-results/
         env:
         - name: TARGET_URL
-          value: "https://qwen3-27b-nvfp4-kserve-workload-svc.models-as-a-service.svc.cluster.local:8000/v1"
+          value: "https://<model-service>.models-as-a-service.svc.cluster.local:8000/v1"
         resources:
           requests:
             memory: "4Gi"
